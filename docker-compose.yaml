@@ -1,0 +1,73 @@
+services:
+  # Django app
+  blog_w_authentication_backend:
+    container_name: django_blog_w_authentication
+    build: .
+    command: uvicorn core.asgi:application --host 0.0.0.0 --port 8003 --reload
+    volumes:
+      - .:/app
+    ports:
+      - 8003:8003
+    depends_on:
+      - blog_w_authentication_django_redis
+      - blog_w_authentication_django_db
+
+  # Redis (First, run django_redis and the run django)
+  blog_w_authentication_django_redis:
+    image: redis
+    container_name: blog_w_authentication_django_redis
+    ports:
+      - 6379:6381
+
+  # Database PosgreSQL
+  blog_w_authentication_django_db:
+    image: postgres
+    container_name: postgresql_blog_w_authentication # Host
+    restart: always # In case of an error, the database will be restarted to always have it available
+    environment:
+      POSTGRES_DB: django_db
+      POSTGRES_USER: django
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5434:5434
+    volumes:
+      - .dbdata:/var/lib/posgresql
+
+  # pgAdmin DBMS
+  blog_w_authentication_pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_blog_w_authentication
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@admin.com"
+      PGADMIN_DEFAULT_PASSWORD: "admin"
+    ports:
+      - 80:81
+    depends_on:
+      - blog_w_authentication_django_db
+
+
+  # Celery
+  celery_worker:
+    container_name: blog_celery_worker
+    build: .
+    command: celery -A core worker --loglevel=info
+    volumes:
+      - .:/app
+    ports:
+      - 8004:8004
+    depends_on:
+      - blog_w_authentication_django_redis
+      - blog_w_authentication_django_db
+
+  # Celery Beat
+  celery_beat: 
+    container_name: blog_celery_beat
+    build: .
+    command: celery -A core beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - .:/app
+    ports:
+      - 8005:8005
+    depends_on:
+      - blog_w_authentication_django_redis
+      - blog_w_authentication_django_db
