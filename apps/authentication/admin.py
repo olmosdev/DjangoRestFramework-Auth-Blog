@@ -13,13 +13,15 @@ class UserAccountAdmin(UserAdmin):
         "last_name",
         "is_active",
         "is_staff",
+        "role",
+        "verified",
     )
 
     list_filter = ("is_active", "is_staff", "is_superuser", "created_at")
 
     # Fields to be displayed in the editing form
     fieldsets = (
-        (None, {"fields": ("email", "username", "password")}),
+        (None, {"fields": ("email", "username", "password", "verified", "role")}),
         ("Personal info", {"fields": ("first_name", "last_name")}),
         ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
         ("Important dates", {"fields": ("last_login", "created_at", "updated_at")}),
@@ -29,12 +31,13 @@ class UserAccountAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             "classes": ("wide",),
-            "fields": ("email", "username", "first_name", "last_name", "password1", "password2", "is_active", "is_staff", "is_superuser"),
-        })
+            "fields": ("email", "username", "first_name", "last_name", "role", "verified", "password1", "password2", "is_active", "is_staff", "is_superuser"),
+        }),
     )
 
     search_fields = ("email", "username", "first_name", "last_name")
     ordering = ("email",)
     readonly_fields = ("created_at", "updated_at")
+    list_editable = ("role", "verified",)
 
 admin.site.register(UserAccount, UserAccountAdmin)
